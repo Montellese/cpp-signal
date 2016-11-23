@@ -217,6 +217,75 @@ public:
       }
     }
 
+    template<class TInit, class TSlot, typename... TCallArgs>
+    TInit accumulate(TInit&& init, TCallArgs&&... args)
+    {
+      static_assert(std::is_same<TSlot::result_type, void>::value == false, "Cannot accumulate slot return values of type 'void'");
+
+      std::lock_guard<locking_policy> lock(*this);
+      for (const auto& slot : slots_)
+      {
+        if (!slot.call)
+          continue;
+
+        init = init + TSlot(slot.key).call(std::forward<TCallArgs>(args)...);
+      }
+
+      return init;
+    }
+
+    template<class TInit, class TBinaryOperation, class TSlot, typename... TCallArgs>
+    TInit accumulate_op(TInit&& init, TBinaryOperation&& binary_op, TCallArgs&&... args)
+    {
+      static_assert(std::is_same<TSlot::result_type, void>::value == false, "Cannot accumulate slot return values of type 'void'");
+
+      std::lock_guard<locking_policy> lock(*this);
+      for (const auto& slot : slots_)
+      {
+        if (!slot.call)
+          continue;
+
+        init = binary_op(init, TSlot(slot.key).call(std::forward<TCallArgs>(args)...));
+      }
+
+      return init;
+    }
+
+    template<class TContainer, class TSlot, typename... TCallArgs>
+    TContainer aggregate(TCallArgs&&... args)
+    {
+      static_assert(std::is_same<TSlot::result_type, void>::value == false, "Cannot accumulate slot return values of type 'void'");
+
+      TContainer container;
+      auto iterator = std::inserter(container, container.end());
+
+      std::lock_guard<locking_policy> lock(*this);
+      for (const auto& slot : slots_)
+      {
+        if (!slot.call)
+          continue;
+
+        *iterator = TSlot(slot.key).call(std::forward<TCallArgs>(args)...);
+      }
+
+      return container;
+    }
+
+    template<class TCollector, class TSlot, typename... TCallArgs>
+    void collect(TCollector&& collector, TCallArgs&&... args)
+    {
+      static_assert(std::is_same<TSlot::result_type, void>::value == false, "Cannot collect slot return values of type 'void'");
+
+      std::lock_guard<locking_policy> lock(*this);
+      for (const auto& slot : slots_)
+      {
+        if (!slot.call)
+          continue;
+
+        collector(TSlot(slot.key).call(std::forward<TCallArgs>(args)...));
+      }
+    }
+
     inline void add_to_call(const cpp_signal_util::slot_key& key, slot_tracker* tracker)
     {
       add(key, tracker, true);
@@ -287,6 +356,30 @@ public:
     inline void emit(TEmitArgs&&... args)
     {
       slot_tracker::call<connected_slot>(std::forward<TEmitArgs>(args)...);
+    }
+
+    template<class TInit, typename... TEmitArgs>
+    inline TInit accumulate(TInit&& init, TEmitArgs&&... args)
+    {
+      return slot_tracker::accumulate<TInit, connected_slot>(std::forward<TInit>(init), std::forward<TEmitArgs>(args)...);
+    }
+
+    template<class TInit, class TBinaryOperation, typename... TEmitArgs>
+    inline TInit accumulate_op(TInit&& init, TBinaryOperation&& binary_op, TEmitArgs&&... args)
+    {
+      return slot_tracker::accumulate_op<TInit, TBinaryOperation, connected_slot>(std::forward<TInit>(init), std::forward<TBinaryOperation>(binary_op), std::forward<TEmitArgs>(args)...);
+    }
+
+    template<class TContainer, typename... TEmitArgs>
+    inline TContainer aggregate(TEmitArgs&&... args)
+    {
+      return slot_tracker::aggregate<TContainer, connected_slot>(std::forward<TEmitArgs>(args)...);
+    }
+
+    template<typename TCollector, typename... TEmitArgs>
+    inline void collect(TCollector&& collector, TEmitArgs&&... args)
+    {
+      slot_tracker::collect<TCollector, connected_slot>(std::forward<TCollector>(collector), std::forward<TEmitArgs>(args)...);
     }
 
     // callable object

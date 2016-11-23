@@ -1,6 +1,7 @@
 include_directories(".")
 
 set(SOURCES main.cpp
+            aggregation.cpp
             class.cpp
             global.cpp
             lambda.cpp
