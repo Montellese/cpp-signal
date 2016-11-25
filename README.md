@@ -48,7 +48,8 @@ To be able to run the tests provided with cpp-signal [CMake](https://cmake.org/)
    * Non-static class methods
    * Callables (including lambda expressions)
  * [Signal chaining](#signal-chaining)
- * [Slot result collection](#slot-result-collection)
+ * [Copying](#copying)
+ * [Slot result collection](#slot-result-collectCion)
  * [Threading policy](#threading-policy)
 
 #### Type-safety ####
@@ -142,6 +143,12 @@ signal.emit(1);
 ```
 will result in `slot` being called twice: once as a direct slot of `signal` and once as a slot of `chained_signal`.
 
+#### Copying ####
+cpp-signal features full support for copying classes deriving from `slot_tracker` including `signal`:
+
+ * when copying a tracked slot connected to a signal the copied slot will automatically also be connected to the same signal
+ * when copying a signal with connected slots the copied signal will have the same slots connected
+
 #### Slot result collection ####
 cpp-signal does not only support signals and slots with return type `void` but any copyable return type. A signal emitted using `signal::emit()` will simply discard the returned value(s). But using the special `signal::emit_collect()` method with a matching collector (which can be any callable object) it is possible to access and possibly collect all the values returned by connected slots. As with the rest of cpp-signal any collector needs to match the signal's return type or it will not even compile.
 ```cpp
@@ -200,6 +207,5 @@ Based on the benchmarks used by [nano-signal-slot](https://github.com/NoAvailabl
 ### The Future ###
 There are several ideas for improving and extending cpp-signal:
 
- * Support for copying signals and slot_trackers
  * Asynchronous signal emitting
  * ???

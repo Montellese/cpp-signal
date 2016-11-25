@@ -3,6 +3,7 @@ include_directories(".")
 set(SOURCES main.cpp
             aggregation.cpp
             class.cpp
+            copy.cpp
             global.cpp
             lambda.cpp
             signal.cpp

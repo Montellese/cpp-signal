@@ -90,10 +90,30 @@ public:
       , fun_(reinterpret_cast<function>(key.second))
     { }
 
+    slot(const slot& other)
+      : obj_(other.obj_)
+      , fun_(other.fun_)
+    { }
+
+    slot(slot&& other)
+      : obj_(std::move(other.obj_))
+      , fun_(std::move(other.fun_))
+    { }
     ~slot()
     {
       obj_ = nullptr;
       fun_ = nullptr;
+    }
+    
+    static slot_key copy_key(const slot_key& key, object copied_obj)
+    {
+      object obj = reinterpret_cast<object>(key.first);
+
+      // nothing to do if there's no object related to the slot
+      if (obj == nullptr)
+        return key;
+
+      return std::make_pair(reinterpret_cast<std::uintptr_t>(copied_obj), key.second);
     }
 
     inline slot_key key() const
@@ -194,14 +214,23 @@ public:
 
   public:
     slot_tracker() = default;
+
+    slot_tracker(const slot_tracker& other)
+    {
+      copy(other);
+    }
+
     virtual ~slot_tracker()
     {
       clear();
     }
 
-    // make slot_tracker non-copyable
-    slot_tracker(const slot_tracker&) = delete;
-    slot_tracker& operator=(const slot_tracker&) = delete;
+    slot_tracker& operator=(const slot_tracker& other)
+    {
+      copy(other);
+
+      return *this;
+    }
 
   protected:
     template<class TSlot, typename... TCallArgs>
@@ -330,6 +359,38 @@ public:
     }
 
   private:
+    void copy(const slot_tracker& other)
+    {
+      std::lock_guard<locking_policy> lock(*this);
+      for (const auto& connected_slot : other.slots_)
+      {
+        // if this is a signal we keep the key of the slot to be called
+        // but if it's a tracked slot we need to adjust the key to point at us
+        cpp_signal_util::slot_key copied_key = connected_slot.key;
+        if (!connected_slot.call)
+        {
+          // the signature of the slot template is irrelevant here
+          copied_key = cpp_signal_util::slot<void()>::copy_key(connected_slot.key, this);
+        }
+
+        // this is a non-tracked slot so just copy it and point the tracker to us
+        if (connected_slot.tracker == &other)
+          add(copied_key, this, connected_slot.call);
+        else
+        {
+          // keep track as well
+          add(copied_key, connected_slot.tracker, connected_slot.call);
+
+          // if this is a signal tell the tracker to track this signal
+          if (connected_slot.call)
+            connected_slot.tracker->add_to_track(copied_key, this);
+          // if this is a tracked slot tell the signal to call this slot
+          else
+            connected_slot.tracker->add_to_call(copied_key, this);
+        }
+      }
+    }
+
     slots slots_;
   };
 
@@ -344,6 +405,11 @@ public:
     using result_type = TReturn;
 
     signal() = default;
+
+    signal(const signal& other)
+      : slot_tracker(other)
+    { }
+
     ~signal() = default;
 
     template<typename... TEmitArgs>
