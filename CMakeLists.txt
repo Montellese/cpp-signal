@@ -15,6 +15,7 @@ set(INCLUDE_DIRS "include")
 
 include_directories(${INCLUDE_DIRS})
 
-set(HEADERS ${PROJECT_SOURCE_DIR}/${INCLUDE_DIRS}/${PROJECT_NAME}.h)
+set(HEADERS ${PROJECT_SOURCE_DIR}/${INCLUDE_DIRS}/${PROJECT_NAME}.h
+            ${PROJECT_SOURCE_DIR}/${INCLUDE_DIRS}/${PROJECT_NAME}-async.h)
 
 add_subdirectory(src)

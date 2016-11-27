@@ -1,5 +1,5 @@
 # cpp-signal #
-cpp-signal is a single header-only pure C++11 library providing signal and slot functionality. Using it is as easy as
+cpp-signal is a (single*) header-only pure C++11 library providing signal and slot functionality. Using it is as easy as
 ```cpp
 #include <cpp-signal.h>
 ...
@@ -25,6 +25,8 @@ which will result in the following output on standard out:
 slot(1)
 slot(2)
 ```
+###### ** The synchronous cpp-signal implementation is available in a single header. The asynchronous implementation is available in a separate header file.* ######
+
 ----------
 ### Requirements ###
 The only thing required to use cpp-signal is a C++11 compliant compiler.
@@ -51,6 +53,7 @@ To be able to run the tests provided with cpp-signal [CMake](https://cmake.org/)
  * [Copying](#copying)
  * [Slot result collection](#slot-result-collectCion)
  * [Threading policy](#threading-policy)
+ * [Asynchronous signal emission](#asynchronous-signal-emission)
 
 #### Type-safety ####
 Thanks to C++11's variadic templates cpp-signal calls are completely type-safe. It is not possible to connect a slot with mismatching return type and or parameter list to a signal. Furthermore it is not possible to emit a signal with mismatching parameters.
@@ -181,6 +184,53 @@ void lock();
 void unlock();
 ```
 
+#### Asynchronous signal emission ####
+In addition to the `cpp-signal.h` header file cpp-signal comes with a second (optional) header file `cpp-signal-async.h` which provides `cpp_signal_async<>`. `cpp_signal_async<>` provides the same functionalities as `cpp_signal<>` but emitting a signal will be done asynchronously i.e. in a seperate thread.
+```cpp
+#include <chrono>
+#include <thread>
+
+#include <cpp-signal-async.h>
+...
+auto slot = [](int value) -> int
+{
+  std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+  std::cout << "slot(" << value << << ")" << std::endl;
+
+  return 2 * value;
+}
+
+cpp_signal<>::signal<int(int)> signal;
+signal.connect(slot);
+
+std::cout << "signal.emit(1)" << std::endl;
+signal.emit(1);  // prints "slot(1)"
+std::cout << "signal.emit(2)" << std::endl;
+signal.emit(2);  // prints "slot(2)"
+
+std::cout << "signal.disconnect(slot)" << std::endl;
+signal.disconnect(slot);
+
+std::cout << "signal.emit(3)" << std::endl;
+signal.emit(3);  // this will not call the slot
+```
+will result in the following output:
+```cpp
+signal.emit(1)
+signal.emit(2)
+slot(1)
+signal.disconnect(slot)
+slot(2)
+slot(3)
+```
+As can be seen the order is not the same as if it would be executed synchronously.
+
+Due to the asynchronous emission of signals there are a few things that need to be kept in mind:
+
+ * `signal` objects cannot be modified while they are being asynchronously emitted. It is possible to call any modifying methods on a `signal` object but it will block until the signal has finished the asynchronous emission.
+ * `cpp_signal_async<>` also supports specifying the locking policy. While for `cpp_signal<>` the default locking policy is no locking at all for `cpp_signal_async<>` the default locking policy is `std::mutex` because it needs to be thread-safe. When choosing a different locking policy it is the users responsibility to provide a thread-safe locking policy.
+ * All emission methods (`emit()`, `accumulate()`, `accumulate_op()`, `aggregate()` and `collect()`) return an `std::future<>` to be able to wait for emission to finish and to be able to access any results. As opposed to when using `std::future<>` returned from `std::async()` the returned `std::future<>` does not have to be stored and used but can be ignored. Either way the emission will be executed asynchronously (which is not the case with `std::async()`).
+
 ### Performance ###
 Based on the benchmarks used by [nano-signal-slot](https://github.com/NoAvailableAlias/signal-slot-benchmarks) cpp-signal ranks fourth right on [nano-signal-slot](https://github.com/NoAvailableAlias/nano-signal-slot)'s and Wink-Signals tails:
 
@@ -205,7 +255,4 @@ Based on the benchmarks used by [nano-signal-slot](https://github.com/NoAvailabl
 *\* library is designed to always be thread-safe*
 
 ### The Future ###
-There are several ideas for improving and extending cpp-signal:
-
- * Asynchronous signal emitting
- * ???
+I'm always open for new ideas and feedback.

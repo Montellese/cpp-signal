@@ -2,6 +2,7 @@ include_directories(".")
 
 set(SOURCES main.cpp
             aggregation.cpp
+            async.cpp
             class.cpp
             copy.cpp
             global.cpp
