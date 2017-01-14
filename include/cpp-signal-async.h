@@ -59,7 +59,7 @@ public:
     class semaphore
     {
     public:
-      semaphore(slot_tracker& tracker, int count = 0)
+      semaphore(slot_tracker& tracker, int count = 0) noexcept
         : tracker_(tracker)
         , count_(count)
       { }
@@ -108,13 +108,13 @@ public:
     };
 
   public:
-    slot_tracker()
+    slot_tracker() noexcept
       : slots_()
       , cond_var_()
       , sem_(*this, 0)
     { }
 
-    slot_tracker(const slot_tracker& other)
+    slot_tracker(const slot_tracker& other) noexcept
       : slots_()
       , cond_var_()
       , sem_count_(0)
@@ -123,12 +123,12 @@ public:
       copy(other);
     }
 
-    virtual ~slot_tracker()
+    virtual ~slot_tracker() noexcept
     {
       clear();
     }
 
-    slot_tracker& operator=(const slot_tracker& other)
+    slot_tracker& operator=(const slot_tracker& other) noexcept
     {
       copy(other);
 
@@ -250,23 +250,23 @@ public:
         }, std::forward<TCollector>(collector), std::forward<TCallArgs>(args)...);
     }
 
-    inline void add_to_call(const cpp_signal_util::slot_key& key, slot_tracker* tracker)
+    inline void add_to_call(const cpp_signal_util::slot_key& key, slot_tracker* tracker) noexcept
     {
       add(key, tracker, true);
     }
 
-    inline void add_to_track(const cpp_signal_util::slot_key& key, slot_tracker* tracker)
+    inline void add_to_track(const cpp_signal_util::slot_key& key, slot_tracker* tracker) noexcept
     {
       add(key, tracker, false);
     }
 
-    inline void add(const cpp_signal_util::slot_key& key, slot_tracker* tracker, bool call)
+    inline void add(const cpp_signal_util::slot_key& key, slot_tracker* tracker, bool call) noexcept
     {
       scoped_semaphore sem(sem_);
       slots_.emplace_front(connected_slot{ key, tracker, call });
     }
 
-    inline void remove(const cpp_signal_util::slot_key& key, slot_tracker* tracker)
+    inline void remove(const cpp_signal_util::slot_key& key, slot_tracker* tracker) noexcept
     {
       scoped_semaphore sem(sem_);
       slots_.remove_if([&key, tracker](const connected_slot& slot)
@@ -275,7 +275,7 @@ public:
       });
     }
 
-    void clear()
+    void clear() noexcept
     {
       scoped_semaphore sem(sem_);
       for (auto& slot : slots_)
@@ -287,13 +287,13 @@ public:
       slots_.clear();
     }
 
-    inline bool empty()
+    inline bool empty() noexcept
     {
       scoped_semaphore sem(sem_);
       return slots_.empty();
     }
 
-    void copy(const slot_tracker& other)
+    void copy(const slot_tracker& other) noexcept
     {
       scoped_semaphore sem(sem_);
       for (const auto& connected_slot : other.slots_)
@@ -363,7 +363,7 @@ public:
 
     signal() = default;
 
-    signal(const signal& other)
+    signal(const signal& other) noexcept
       : slot_tracker(other)
     { }
 
@@ -407,91 +407,91 @@ public:
 
     // callable object
     template<typename TObject>
-    inline void connect(TObject& callable)
+    inline void connect(TObject& callable) noexcept
     {
       connect<TObject>(std::addressof(callable));
     }
 
     template<typename TObject>
-    inline void disconnect(TObject& callable)
+    inline void disconnect(TObject& callable) noexcept
     {
       disconnect<TObject>(std::addressof(callable));
     }
 
     // callable pointer to object
     template<typename TObject>
-    inline void connect(TObject* callable)
+    inline void connect(TObject* callable) noexcept
     {
       add<TObject>(connected_slot::template bind<TObject>(callable), callable);
     }
 
     template<typename TObject>
-    inline void disconnect(TObject* callable)
+    inline void disconnect(TObject* callable) noexcept
     {
       remove<TObject>(connected_slot::template bind<TObject>(callable), callable);
     }
 
     // static/global function
     template<TReturn(*TFunction)(TArgs...)>
-    inline void connect()
+    inline void connect() noexcept
     {
       slot_tracker::add_to_call(connected_slot::template bind<TFunction>(), this);
     }
 
     template<TReturn(*TFunction)(TArgs...)>
-    inline void disconnect()
+    inline void disconnect() noexcept
     {
       slot_tracker::remove(connected_slot::template bind<TFunction>(), this);
     }
 
     // member function from object
     template<typename TObject, TReturn(TObject::*TFunction)(TArgs...)>
-    inline void connect(TObject& obj)
+    inline void connect(TObject& obj) noexcept
     {
       connect<TObject, TFunction>(std::addressof(obj));
     }
 
     template<typename TObject, TReturn(TObject::*TFunction)(TArgs...)>
-    inline void disconnect(TObject& obj)
+    inline void disconnect(TObject& obj) noexcept
     {
       disconnect<TObject, TFunction>(std::addressof(obj));
     }
 
     // member function from pointer to object
     template<typename TObject, TReturn(TObject::*TFunction)(TArgs...)>
-    inline void connect(TObject* obj)
+    inline void connect(TObject* obj) noexcept
     {
       add<TObject>(connected_slot::template bind<TObject, TFunction>(obj), obj);
     }
 
     template<typename TObject, TReturn(TObject::*TFunction)(TArgs...)>
-    inline void disconnect(TObject* obj)
+    inline void disconnect(TObject* obj) noexcept
     {
       remove<TObject>(connected_slot::template bind<TObject, TFunction>(obj), obj);
     }
 
     // const member function from object
     template<typename TObject, TReturn(TObject::*TFunction)(TArgs...) const>
-    inline void connect(TObject& obj)
+    inline void connect(TObject& obj) noexcept
     {
       connect<TObject, TFunction>(std::addressof(obj));
     }
 
     template<typename TObject, TReturn(TObject::*TFunction)(TArgs...) const>
-    inline void disconnect(TObject& obj)
+    inline void disconnect(TObject& obj) noexcept
     {
       disconnect<TObject, TFunction>(std::addressof(obj));
     }
 
     // const member function from pointer to object
     template<typename TObject, TReturn(TObject::*TFunction)(TArgs...) const>
-    inline void connect(TObject* obj)
+    inline void connect(TObject* obj) noexcept
     {
       add<TObject>(connected_slot::template bind<TObject, TFunction>(obj), obj);
     }
 
     template<typename TObject, TReturn(TObject::*TFunction)(TArgs...) const>
-    inline void disconnect(TObject* obj)
+    inline void disconnect(TObject* obj) noexcept
     {
       remove<TObject>(connected_slot::template bind<TObject, TFunction>(obj), obj);
     }
@@ -499,7 +499,7 @@ public:
   private:
     // connect tracked slot (relying on SFINAE)
     template <typename TObject>
-    inline void add(const cpp_signal_util::slot_key& key, typename TObject::slot_tracker* tracker)
+    inline void add(const cpp_signal_util::slot_key& key, typename TObject::slot_tracker* tracker) noexcept
     {
       slot_tracker::add_to_call(key, tracker);
       tracker->add_to_track(key, this);
@@ -507,14 +507,14 @@ public:
 
     // connect untracked slot (relying on SFINAE)
     template <typename TObject>
-    inline void add(const cpp_signal_util::slot_key& key, ...)
+    inline void add(const cpp_signal_util::slot_key& key, ...) noexcept
     {
       slot_tracker::add_to_call(key, this);
     }
 
     // disconnect tracked slot (relying on SFINAE)
     template <typename TObject>
-    inline void remove(const cpp_signal_util::slot_key& key, typename TObject::slot_tracker* tracker)
+    inline void remove(const cpp_signal_util::slot_key& key, typename TObject::slot_tracker* tracker) noexcept
     {
       slot_tracker::remove(key, tracker);
       tracker->remove(key, this);
@@ -522,7 +522,7 @@ public:
 
     // disconnect untracked slot (relying on SFINAE)
     template <typename TObject>
-    inline void remove(const cpp_signal_util::slot_key& key, ...)
+    inline void remove(const cpp_signal_util::slot_key& key, ...) noexcept
     {
       slot_tracker::remove(key, this);
     }
