@@ -117,7 +117,6 @@ public:
     slot_tracker(const slot_tracker& other) noexcept
       : slots_()
       , cond_var_()
-      , sem_count_(0)
       , sem_(*this, 0)
     {
       copy(other);
