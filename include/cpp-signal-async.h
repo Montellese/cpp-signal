@@ -48,13 +48,13 @@ public:
 
     static const std::launch async_launch_policy = std::launch::async;
 
-    struct connected_slot
+    struct tracked_slot
     {
       const cpp_signal_util::slot_key key;
       slot_tracker* tracker;
       const bool call;
     };
-    using slots = std::forward_list<connected_slot>;
+    using slots = std::forward_list<tracked_slot>;
 
     class semaphore
     {
@@ -263,13 +263,13 @@ public:
     inline void add(const cpp_signal_util::slot_key& key, slot_tracker* tracker, bool call) noexcept
     {
       scoped_semaphore sem(sem_);
-      slots_.emplace_front(connected_slot{ key, tracker, call });
+      slots_.emplace_front(tracked_slot{ key, tracker, call });
     }
 
     inline void remove(const cpp_signal_util::slot_key& key, slot_tracker* tracker) noexcept
     {
       scoped_semaphore sem(sem_);
-      slots_.remove_if([&key, tracker](const connected_slot& slot)
+      slots_.remove_if([&key, tracker](const tracked_slot& slot)
       {
         return slot.key == key && slot.tracker == tracker;
       });
@@ -296,31 +296,31 @@ public:
     void copy(const slot_tracker& other) noexcept
     {
       scoped_semaphore sem(sem_);
-      for (const auto& connected_slot : other.slots_)
+      for (const auto& tracked_slot : other.slots_)
       {
         // if this is a signal we keep the key of the slot to be called
         // but if it's a tracked slot we need to adjust the key to point at us
-        cpp_signal_util::slot_key copied_key = connected_slot.key;
-        if (!connected_slot.call)
+        cpp_signal_util::slot_key copied_key = tracked_slot.key;
+        if (!tracked_slot.call)
         {
           // the signature of the slot template is irrelevant here
-          copied_key = cpp_signal_util::slot<void()>::copy_key(connected_slot.key, this);
+          copied_key = cpp_signal_util::slot<void()>::copy_key(tracked_slot.key, this);
         }
 
         // this is a non-tracked slot so just copy it and point the tracker to us
-        if (connected_slot.tracker == &other)
-          add(copied_key, this, connected_slot.call);
+        if (tracked_slot.tracker == &other)
+          add(copied_key, this, tracked_slot.call);
         else
         {
           // keep track as well
-          add(copied_key, connected_slot.tracker, connected_slot.call);
+          add(copied_key, tracked_slot.tracker, tracked_slot.call);
 
           // if this is a signal tell the tracker to track this signal
-          if (connected_slot.call)
-            connected_slot.tracker->add_to_track(copied_key, this);
+          if (tracked_slot.call)
+            tracked_slot.tracker->add_to_track(copied_key, this);
           // if this is a tracked slot tell the signal to call this slot
           else
-            connected_slot.tracker->add_to_call(copied_key, this);
+            tracked_slot.tracker->add_to_call(copied_key, this);
         }
       }
     }
