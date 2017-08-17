@@ -422,31 +422,31 @@ public:
     template<typename... TEmitArgs>
     inline void emit(TEmitArgs&&... args)
     {
-      slot_tracker::call<connected_slot>(std::forward<TEmitArgs>(args)...);
+      slot_tracker::template call<connected_slot>(std::forward<TEmitArgs>(args)...);
     }
 
     template<class TInit, typename... TEmitArgs>
     inline TInit accumulate(TInit&& init, TEmitArgs&&... args)
     {
-      return slot_tracker::accumulate<TInit, connected_slot>(std::forward<TInit>(init), std::forward<TEmitArgs>(args)...);
+      return slot_tracker::template accumulate<TInit, connected_slot>(std::forward<TInit>(init), std::forward<TEmitArgs>(args)...);
     }
 
     template<class TInit, class TBinaryOperation, typename... TEmitArgs>
     inline TInit accumulate_op(TInit&& init, TBinaryOperation&& binary_op, TEmitArgs&&... args)
     {
-      return slot_tracker::accumulate_op<TInit, TBinaryOperation, connected_slot>(std::forward<TInit>(init), std::forward<TBinaryOperation>(binary_op), std::forward<TEmitArgs>(args)...);
+      return slot_tracker::template accumulate_op<TInit, TBinaryOperation, connected_slot>(std::forward<TInit>(init), std::forward<TBinaryOperation>(binary_op), std::forward<TEmitArgs>(args)...);
     }
 
     template<class TContainer, typename... TEmitArgs>
     inline TContainer aggregate(TEmitArgs&&... args)
     {
-      return slot_tracker::aggregate<TContainer, connected_slot>(std::forward<TEmitArgs>(args)...);
+      return slot_tracker::template aggregate<TContainer, connected_slot>(std::forward<TEmitArgs>(args)...);
     }
 
     template<typename TCollector, typename... TEmitArgs>
     inline void collect(TCollector&& collector, TEmitArgs&&... args)
     {
-      slot_tracker::collect<TCollector, connected_slot>(std::forward<TCollector>(collector), std::forward<TEmitArgs>(args)...);
+      slot_tracker::template collect<TCollector, connected_slot>(std::forward<TCollector>(collector), std::forward<TEmitArgs>(args)...);
     }
 
     // callable object
