@@ -158,7 +158,7 @@ public:
     template<class TInit, class TSlot, typename... TCallArgs>
     std::future<typename std::decay<TInit>::type> accumulate(TInit&& init, TCallArgs&&... args)
     {
-      static_assert(std::is_same<TSlot::result_type, void>::value == false, "Cannot accumulate slot return values of type 'void'");
+      static_assert(std::is_same<typename TSlot::result_type, void>::value == false, "Cannot accumulate slot return values of type 'void'");
 
       sem_.wait();
       return async(
@@ -182,7 +182,7 @@ public:
     template<class TInit, class TBinaryOperation, class TSlot, typename... TCallArgs>
     std::future<typename std::decay<TInit>::type> accumulate_op(TInit&& init, TBinaryOperation&& binary_op, TCallArgs&&... args)
     {
-      static_assert(std::is_same<TSlot::result_type, void>::value == false, "Cannot accumulate slot return values of type 'void'");
+      static_assert(std::is_same<typename TSlot::result_type, void>::value == false, "Cannot accumulate slot return values of type 'void'");
 
       sem_.wait();
       return async(
@@ -206,7 +206,7 @@ public:
     template<class TContainer, class TSlot, typename... TCallArgs>
     std::future<TContainer> aggregate(TCallArgs&&... args)
     {
-      static_assert(std::is_same<TSlot::result_type, void>::value == false, "Cannot accumulate slot return values of type 'void'");
+      static_assert(std::is_same<typename TSlot::result_type, void>::value == false, "Cannot accumulate slot return values of type 'void'");
 
       sem_.wait();
       return async(
@@ -232,7 +232,7 @@ public:
     template<class TCollector, class TSlot, typename... TCallArgs>
     std::future<void> collect(TCollector&& collector, TCallArgs&&... args)
     {
-      static_assert(std::is_same<TSlot::result_type, void>::value == false, "Cannot collect slot return values of type 'void'");
+      static_assert(std::is_same<typename TSlot::result_type, void>::value == false, "Cannot collect slot return values of type 'void'");
 
       sem_.wait();
       return async(

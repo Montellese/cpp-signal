@@ -250,7 +250,7 @@ public:
     template<class TInit, class TSlot, typename... TCallArgs>
     TInit accumulate(TInit&& init, TCallArgs&&... args)
     {
-      static_assert(std::is_same<TSlot::result_type, void>::value == false, "Cannot accumulate slot return values of type 'void'");
+      static_assert(std::is_same<typename TSlot::result_type, void>::value == false, "Cannot accumulate slot return values of type 'void'");
 
       std::lock_guard<locking_policy> lock(*this);
       for (const auto& slot : slots_)
@@ -267,7 +267,7 @@ public:
     template<class TInit, class TBinaryOperation, class TSlot, typename... TCallArgs>
     TInit accumulate_op(TInit&& init, TBinaryOperation&& binary_op, TCallArgs&&... args)
     {
-      static_assert(std::is_same<TSlot::result_type, void>::value == false, "Cannot accumulate slot return values of type 'void'");
+      static_assert(std::is_same<typename TSlot::result_type, void>::value == false, "Cannot accumulate slot return values of type 'void'");
 
       std::lock_guard<locking_policy> lock(*this);
       for (const auto& slot : slots_)
@@ -284,7 +284,7 @@ public:
     template<class TContainer, class TSlot, typename... TCallArgs>
     TContainer aggregate(TCallArgs&&... args)
     {
-      static_assert(std::is_same<TSlot::result_type, void>::value == false, "Cannot accumulate slot return values of type 'void'");
+      static_assert(std::is_same<typename TSlot::result_type, void>::value == false, "Cannot accumulate slot return values of type 'void'");
 
       TContainer container;
       auto iterator = std::inserter(container, container.end());
@@ -304,7 +304,7 @@ public:
     template<class TCollector, class TSlot, typename... TCallArgs>
     void collect(TCollector&& collector, TCallArgs&&... args)
     {
-      static_assert(std::is_same<TSlot::result_type, void>::value == false, "Cannot collect slot return values of type 'void'");
+      static_assert(std::is_same<typename TSlot::result_type, void>::value == false, "Cannot collect slot return values of type 'void'");
 
       std::lock_guard<locking_policy> lock(*this);
       for (const auto& slot : slots_)
