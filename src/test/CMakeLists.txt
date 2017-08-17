@@ -1,5 +1,7 @@
 include_directories(".")
 
+set(CMAKE_CXX_STANDARD 11)
+
 set(SOURCES main.cpp
             aggregation.cpp
             async.cpp
