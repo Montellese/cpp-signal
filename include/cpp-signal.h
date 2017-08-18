@@ -68,6 +68,13 @@ class cpp_signal_util
 public:
   cpp_signal_util() = delete;
 
+  /********************* helpers ********************/
+  template<typename T>
+  using decay_t = typename std::decay<T>::type;
+
+  template<typename T>
+  using result_of_t = typename std::result_of<T>::type;
+
   /********************* slot ********************/
   using slot_key = std::pair<std::uintptr_t, std::uintptr_t>;
 

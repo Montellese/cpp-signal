@@ -155,7 +155,7 @@ public:
     }
 
     template<class TInit, class TSlot, typename... TCallArgs>
-    std::future<typename std::decay<TInit>::type> accumulate(TInit&& init, TCallArgs&&... args)
+    std::future<typename cpp_signal_util::decay_t<TInit>> accumulate(TInit&& init, TCallArgs&&... args)
     {
       static_assert(std::is_same<typename TSlot::result_type, void>::value == false, "Cannot accumulate slot return values of type 'void'");
 
@@ -163,7 +163,7 @@ public:
       return async(
         [this, init](TCallArgs&&... args)
         {
-          typename std::decay<TInit>::type value = init;
+          typename cpp_signal_util::decay_t<TInit> value = init;
           for (const auto& slot : slots_)
           {
             if (!slot.call)
@@ -179,7 +179,7 @@ public:
     }
 
     template<class TInit, class TBinaryOperation, class TSlot, typename... TCallArgs>
-    std::future<typename std::decay<TInit>::type> accumulate_op(TInit&& init, TBinaryOperation&& binary_op, TCallArgs&&... args)
+    std::future<typename cpp_signal_util::decay_t<TInit>> accumulate_op(TInit&& init, TBinaryOperation&& binary_op, TCallArgs&&... args)
     {
       static_assert(std::is_same<typename TSlot::result_type, void>::value == false, "Cannot accumulate slot return values of type 'void'");
 
@@ -187,7 +187,7 @@ public:
       return async(
         [this, init](TBinaryOperation&& binary_op, TCallArgs&&... args)
         {
-          typename std::decay<TInit>::type value = init;
+          typename cpp_signal_util::decay_t<TInit> value = init;
           for (const auto& slot : slots_)
           {
             if (!slot.call)
@@ -328,12 +328,12 @@ public:
     // this is an alternative to std::async which allows the caller to discard the returned
     // std::future
     template<class TFunction, typename... TArgs>
-    std::future<typename std::decay<typename std::result_of<TFunction(TArgs...)>::type>::type> async(TFunction&& fun, TArgs&&... args)
+    std::future<typename cpp_signal_util::decay_t<typename cpp_signal_util::result_of_t<TFunction(TArgs...)>>> async(TFunction&& fun, TArgs&&... args)
     {
-      using result_value = typename std::decay<typename std::result_of<TFunction(TArgs...)>::type>::type;
+      using result_t = typename cpp_signal_util::decay_t<typename cpp_signal_util::result_of_t<TFunction(TArgs...)>>;
 
       // create a task for the given function
-      std::packaged_task<result_value(TArgs...)> task(std::forward<TFunction>(fun));
+      std::packaged_task<result_t(TArgs...)> task(std::forward<TFunction>(fun));
       // get the future of the task
       auto result = task.get_future();
 
@@ -381,13 +381,13 @@ public:
     }
 
     template<class TInit, typename... TEmitArgs>
-    inline std::future<typename std::decay<TInit>::type> accumulate(TInit&& init, TEmitArgs&&... args)
+    inline std::future<typename cpp_signal_util::decay_t<TInit>> accumulate(TInit&& init, TEmitArgs&&... args)
     {
       return slot_tracker::template accumulate<TInit, connected_slot>(std::forward<TInit>(init), std::forward<TEmitArgs>(args)...);
     }
 
     template<class TInit, class TBinaryOperation, typename... TEmitArgs>
-    inline std::future<typename std::decay<TInit>::type> accumulate_op(TInit&& init, TBinaryOperation&& binary_op, TEmitArgs&&... args)
+    inline std::future<typename cpp_signal_util::decay_t<TInit>> accumulate_op(TInit&& init, TBinaryOperation&& binary_op, TEmitArgs&&... args)
     {
       return slot_tracker::template accumulate_op<TInit, TBinaryOperation, connected_slot>(std::forward<TInit>(init), std::forward<TBinaryOperation>(binary_op), std::forward<TEmitArgs>(args)...);
     }
