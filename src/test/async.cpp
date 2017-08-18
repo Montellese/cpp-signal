@@ -190,15 +190,11 @@ SCENARIO("slots can be connected to an async signal", "[async]")
       {
         auto future = signal.emit();
 
-        THEN("the connected slot is called")
+        THEN("the connected slot is called and the unconnected slot isn't called")
         {
           future.wait();
 
           REQUIRE(slot_one_count == 1);
-        }
-
-        AND_THEN("the unconnected slot isn't called")
-        {
           REQUIRE(slot_two_count == 0);
         }
       }
@@ -518,15 +514,12 @@ SCENARIO("return values from slots called through an async signal can be accumul
       const int value = 5;
       auto future = signal.accumulate(init_value, value);
 
-      THEN("the slots are called")
+      THEN("the slots are called and the slots return values are accumulated")
       {
         future.wait();
 
         REQUIRE(slot_count > 0);
-      }
 
-      AND_THEN("the slots return values are accumulated")
-      {
         REQUIRE(future.get() == init_value + slot_one(value) + slot_two(value));
       }
     }
@@ -548,15 +541,12 @@ SCENARIO("return values from slots called through an async signal can be accumul
       const int value = 5;
       auto future = signal.accumulate_op(init_value, std::minus<int>(), value);
 
-      THEN("the slots are called")
+      THEN("the slots are called and the slots return values are accumulated using the given binary operator")
       {
         future.wait();
 
         REQUIRE(slot_count > 0);
-      }
 
-      AND_THEN("the slots return values are accumulated using the given binary operator")
-      {
         REQUIRE(future.get() == std::minus<int>()(std::minus<int>()(init_value, slot_one(value)), slot_two(value)));
       }
     }
@@ -580,15 +570,12 @@ SCENARIO("return values from slots called through an async signal can be aggrega
       const int value = 5;
       auto future = signal.aggregate<std::vector<int>>(value);
 
-      THEN("the slots are called")
+      THEN("the slots are called and the slots return values are aggregated")
       {
         future.wait();
 
         REQUIRE(slot_count > 0);
-      }
 
-      AND_THEN("the slots return values are aggregated")
-      {
         std::vector<int> result { slot_two(value), slot_one(value) };
         REQUIRE(future.get() == result);
       }
@@ -617,15 +604,12 @@ SCENARIO("return values from slots called through an async signal can be collect
       const int value = 5;
       auto future = signal.collect(collector, value);
 
-      THEN("the slots are called")
+      THEN("the slots are called and the slots return values are passed to the collector")
       {
         future.wait();
 
         REQUIRE(slot_count > 0);
-      }
 
-      AND_THEN("the slots return values are passed to the collector")
-      {
         // save the result as collected_count will be modified by the subsequent calls
         const unsigned int collected_count_final = collected_count;
 

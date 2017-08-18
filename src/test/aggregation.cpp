@@ -40,13 +40,9 @@ SCENARIO("return values from slots can be accumulated", "[aggregation]")
       const int value = 5;
       const int accumulated = signal.accumulate(init, value);
 
-      THEN("the slots are called")
+      THEN("the slots are called and their return values are accumulated")
       {
         REQUIRE(slot_count > 0);
-      }
-
-      AND_THEN("the slots return values are accumulated")
-      {
         REQUIRE(accumulated == init_value + slot_one(value) + slot_two(value));
       }
     }
@@ -69,13 +65,9 @@ SCENARIO("return values from slots can be accumulated", "[aggregation]")
       const int value = 5;
       const int accumulated = signal.accumulate_op(init, std::minus<int>(), value);
 
-      THEN("the slots are called")
+      THEN("the slots are called and their return values are accumulated using the given binary operator")
       {
         REQUIRE(slot_count > 0);
-      }
-
-      AND_THEN("the slots return values are accumulated using the given binary operator")
-      {
         REQUIRE(accumulated == std::minus<int>()(std::minus<int>()(init_value, slot_one(value)), slot_two(value)));
       }
     }
@@ -99,13 +91,10 @@ SCENARIO("return values from slots can be aggregated", "[aggregation]")
       const int value = 5;
       auto accumulated = signal.aggregate<std::vector<int>>(value);
 
-      THEN("the slots are called")
+      THEN("the slots are called and their return values are aggregated")
       {
         REQUIRE(slot_count > 0);
-      }
 
-      AND_THEN("the slots return values are aggregated")
-      {
         std::vector<int> result { slot_two(value), slot_one(value) };
         REQUIRE(accumulated == result);
       }
@@ -134,13 +123,10 @@ SCENARIO("return values from slots can be collected", "[aggregation]")
       const int value = 5;
       signal.collect(collector, value);
 
-      THEN("the slots are called")
+      THEN("the slots are called and their return values are passed to the collector")
       {
         REQUIRE(slot_count > 0);
-      }
 
-      AND_THEN("the slots return values are passed to the collector")
-      {
         // save the result as collected_count will be modified by the subsequent calls
         const unsigned int collected_count_final = collected_count;
 

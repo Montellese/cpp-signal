@@ -159,13 +159,9 @@ SCENARIO("slots can be connected to a signal", "[signal]")
       {
         signal.emit();
 
-        THEN("the connected slot is called")
+        THEN("the connected slot is called and the unconnected slot isn't called")
         {
           REQUIRE(slot_one_count == 1);
-        }
-
-        AND_THEN("the unconnected slot isn't called")
-        {
           REQUIRE(slot_two_count == 0);
         }
       }

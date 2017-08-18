@@ -55,13 +55,9 @@ SCENARIO("slot-tracking classes can be copied", "[copy]")
       signal.connect<copy_test_class, &copy_test_class::slot_int>(slot);
       signal.emit(value);
 
-      THEN("the connected (and tracked) slot is called")
+      THEN("the connected (and tracked) slot is called and the unconnected slot isn't called")
       {
         REQUIRE(slot.get_int() == value);
-      }
-
-      AND_THEN("the unconnected slot isn't called")
-      {
         REQUIRE(slot_copy.get_int() == 0);
       }
     }
@@ -73,13 +69,9 @@ SCENARIO("slot-tracking classes can be copied", "[copy]")
 
       signal.emit(value);
 
-      THEN("the previously connected slot is called again")
+      THEN("the previously connected slot is called again and the copied slot is called as well")
       {
         REQUIRE(slot.get_int() == value);
-      }
-
-      AND_THEN("the copied slot is called as well")
-      {
         REQUIRE(slot_copy.get_int() == value);
       }
     }
