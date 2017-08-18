@@ -342,7 +342,7 @@ public:
     inline void remove(const cpp_signal_util::slot_key& key, slot_tracker* tracker) noexcept
     {
       std::lock_guard<locking_policy> lock(*this);
-      slots_.remove_if([&key, tracker](const tracked_slot& slot)
+      slots_.remove_if([&key, tracker](const tracked_slot& slot) -> bool
       {
         return slot.key == key && slot.tracker == tracker;
       });

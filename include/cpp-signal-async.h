@@ -77,7 +77,7 @@ public:
       inline void wait()
       {
         std::unique_lock<locking_policy> lock(tracker_);
-        tracker_.cond_var_.wait(lock, [this]() { return count_ >= 0; });
+        tracker_.cond_var_.wait(lock, [this]() -> bool { return count_ >= 0; });
         --count_;
       }
 
@@ -140,7 +140,7 @@ public:
     {
       sem_.wait();
       return async(
-        [this](TCallArgs&&... args)
+        [this](TCallArgs&&... args) -> void
         {
           for (const auto& slot : slots_)
           {
@@ -161,7 +161,7 @@ public:
 
       sem_.wait();
       return async(
-        [this, init](TCallArgs&&... args)
+        [this, init](TCallArgs&&... args) -> typename cpp_signal_util::decay_t<TInit>
         {
           typename cpp_signal_util::decay_t<TInit> value = init;
           for (const auto& slot : slots_)
@@ -185,7 +185,7 @@ public:
 
       sem_.wait();
       return async(
-        [this, init](TBinaryOperation&& binary_op, TCallArgs&&... args)
+        [this, init](TBinaryOperation&& binary_op, TCallArgs&&... args) -> typename cpp_signal_util::decay_t<TInit>
         {
           typename cpp_signal_util::decay_t<TInit> value = init;
           for (const auto& slot : slots_)
@@ -209,7 +209,7 @@ public:
 
       sem_.wait();
       return async(
-        [this](TCallArgs&&... args)
+        [this](TCallArgs&&... args) -> TContainer
         {
           TContainer container;
           auto iterator = std::inserter(container, container.end());
@@ -235,7 +235,7 @@ public:
 
       sem_.wait();
       return async(
-        [this](TCollector&& collector, TCallArgs&&... args)
+        [this](TCollector&& collector, TCallArgs&&... args) -> void
         {
           for (const auto& slot : slots_)
           {
@@ -268,7 +268,7 @@ public:
     inline void remove(const cpp_signal_util::slot_key& key, slot_tracker* tracker) noexcept
     {
       scoped_semaphore sem(sem_);
-      slots_.remove_if([&key, tracker](const tracked_slot& slot)
+      slots_.remove_if([&key, tracker](const tracked_slot& slot) -> bool
       {
         return slot.key == key && slot.tracker == tracker;
       });
