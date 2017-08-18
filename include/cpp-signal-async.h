@@ -71,7 +71,7 @@ public:
       {
         std::unique_lock<locking_policy> lock(tracker_);
         ++count_;
-        tracker_.cond_var_.notify_all();  // TODO: notify_one() ???
+        tracker_.cond_var_.notify_one();
       }
 
       inline void wait()
