@@ -132,7 +132,7 @@ public:
     template<typename... TCallArgs>
     inline result_type operator()(TCallArgs&&... args)
     {
-      call(std::forward<TCallArgs>(args)...);
+      return call(std::forward<TCallArgs>(args)...);
     }
 
     template<typename... TCallArgs>
