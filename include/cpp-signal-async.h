@@ -41,20 +41,15 @@ public:
   template<typename TReturn> class signal;
 
   /********************* slot_tracker ********************/
-  class slot_tracker : protected locking_policy
+  class slot_tracker : public cpp_signal_base<locking_policy>::slot_tracker
   {
   private:
     template<typename TReturn> friend class signal;
 
-    static const std::launch async_launch_policy = std::launch::async;
+    using slot_tracker_base = typename cpp_signal_base<locking_policy>::slot_tracker;
+    using slot_tracker_base::slots_;
 
-    struct tracked_slot
-    {
-      const cpp_signal_util::slot_key key;
-      slot_tracker* tracker;
-      const bool call;
-    };
-    using slots = std::forward_list<tracked_slot>;
+    static const std::launch async_launch_policy = std::launch::async;
 
     class semaphore
     {
@@ -109,23 +104,18 @@ public:
 
   public:
     slot_tracker() noexcept
-      : slots_()
+      : slot_tracker_base()
       , cond_var_()
       , sem_(*this, 0)
     { }
 
     slot_tracker(const slot_tracker& other) noexcept
-      : slots_()
+      : slot_tracker_base(other)
       , cond_var_()
       , sem_(*this, 0)
-    {
-      copy(other);
-    }
+    { }
 
-    virtual ~slot_tracker() noexcept
-    {
-      clear();
-    }
+    ~slot_tracker() noexcept override = default;
 
     slot_tracker& operator=(const slot_tracker& other) noexcept
     {
@@ -249,79 +239,34 @@ public:
         }, std::forward<TCollector>(collector), std::forward<TCallArgs>(args)...);
     }
 
-    inline void add_to_call(const cpp_signal_util::slot_key& key, slot_tracker* tracker) noexcept
-    {
-      add(key, tracker, true);
-    }
-
-    inline void add_to_track(const cpp_signal_util::slot_key& key, slot_tracker* tracker) noexcept
-    {
-      add(key, tracker, false);
-    }
-
-    inline void add(const cpp_signal_util::slot_key& key, slot_tracker* tracker, bool call) noexcept
+    inline void add(const cpp_signal_util::slot_key& key, slot_tracker_base* tracker, bool call) noexcept override
     {
       scoped_semaphore sem(sem_);
-      slots_.emplace_front(tracked_slot{ key, tracker, call });
+      slot_tracker_base::add(key, tracker, call);
     }
 
-    inline void remove(const cpp_signal_util::slot_key& key, slot_tracker* tracker) noexcept
+    inline void remove(const cpp_signal_util::slot_key& key, slot_tracker_base* tracker) noexcept override
     {
       scoped_semaphore sem(sem_);
-      slots_.remove_if([&key, tracker](const tracked_slot& slot) -> bool
-      {
-        return slot.key == key && slot.tracker == tracker;
-      });
+      slot_tracker_base::remove(key, tracker);
     }
 
-    void clear() noexcept
+    void clear() noexcept override
     {
       scoped_semaphore sem(sem_);
-      for (auto& slot : slots_)
-      {
-        if (slot.tracker != this)
-          slot.tracker->remove(slot.key, this);
-      }
-
-      slots_.clear();
+      slot_tracker_base::clear();
     }
 
-    inline bool empty() noexcept
+    inline bool empty() noexcept override
     {
       scoped_semaphore sem(sem_);
-      return slots_.empty();
+      return slot_tracker_base::empty();
     }
 
-    void copy(const slot_tracker& other) noexcept
+    void copy(const slot_tracker_base& other) noexcept override
     {
       scoped_semaphore sem(sem_);
-      for (const auto& tracked_slot : other.slots_)
-      {
-        // if this is a signal we keep the key of the slot to be called
-        // but if it's a tracked slot we need to adjust the key to point at us
-        cpp_signal_util::slot_key copied_key = tracked_slot.key;
-        if (!tracked_slot.call)
-        {
-          // the signature of the slot template is irrelevant here
-          copied_key = cpp_signal_util::slot<void()>::copy_key(tracked_slot.key, this);
-        }
-
-        // this is a non-tracked slot so just copy it and point the tracker to us
-        if (tracked_slot.tracker == &other)
-          add(copied_key, this, tracked_slot.call);
-        else
-        {
-          // keep track as well
-          add(copied_key, tracked_slot.tracker, tracked_slot.call);
-
-          // if this is a signal tell the tracker to track this signal
-          if (tracked_slot.call)
-            tracked_slot.tracker->add_to_track(copied_key, this);
-          // if this is a tracked slot tell the signal to call this slot
-          else
-            tracked_slot.tracker->add_to_call(copied_key, this);
-        }
-      }
+      slot_tracker_base::copy(other);
     }
 
   private:
@@ -343,8 +288,6 @@ public:
 
       return result;
     }
-
-    slots slots_;
 
     std::condition_variable_any cond_var_;
     semaphore sem_;

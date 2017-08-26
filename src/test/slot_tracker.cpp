@@ -28,7 +28,7 @@ public:
     : m_void(void_value)
     , m_int(int_value)
   { }
-  ~tracked_test_class() = default;
+  ~tracked_test_class() noexcept override = default;
 
   unsigned int get_void() const { return m_void; }
   unsigned int get_int() const { return m_int; }
@@ -141,14 +141,11 @@ SCENARIO("tracked slots connected to a signal are automatically disconnected on 
       }
     }
 
-    WHEN("the tracked slot is destroyed")
+    AND_THEN("the destroyed tracked slot isn't called")
     {
-      THEN("the destroyed tracked slot isn't called")
-      {
-        signal.emit();
+      signal.emit();
 
-        REQUIRE(void_value == 0);
-      }
+      REQUIRE(void_value == 0);
     }
   }
 

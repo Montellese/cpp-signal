@@ -197,23 +197,17 @@ public:
 };
 
 template<class TLockingPolicy = cpp_signal_no_locking>
-class cpp_signal
+class cpp_signal_base
 {
 public:
   using locking_policy = TLockingPolicy;
 
-  cpp_signal() = delete;
-
-  template<typename TReturn> class signal;
+  cpp_signal_base() = delete;
 
   /********************* slot_tracker ********************/
   class slot_tracker : protected locking_policy
   {
-  private:
-    template<typename TReturn> friend class signal;
-
-    using lock_guard = std::lock_guard<locking_policy>;
-
+  protected:
     struct tracked_slot
     {
       const cpp_signal_util::slot_key key;
@@ -234,6 +228,119 @@ public:
     {
       clear();
     }
+
+    slot_tracker& operator=(const slot_tracker& other) noexcept
+    {
+      copy(other);
+
+      return *this;
+    }
+
+  protected:
+    virtual inline void add_to_call(const cpp_signal_util::slot_key& key, slot_tracker* tracker) noexcept
+    {
+      add(key, tracker, true);
+    }
+
+    virtual inline void add_to_track(const cpp_signal_util::slot_key& key, slot_tracker* tracker) noexcept
+    {
+      add(key, tracker, false);
+    }
+
+    virtual inline void add(const cpp_signal_util::slot_key& key, slot_tracker* tracker, bool call) noexcept
+    {
+      slots_.emplace_front(tracked_slot{ key, tracker, call });
+    }
+
+    virtual inline void remove(const cpp_signal_util::slot_key& key, slot_tracker* tracker) noexcept
+    {
+      slots_.remove_if([&key, tracker](const tracked_slot& slot) -> bool
+                       {
+                         return slot.key == key && slot.tracker == tracker;
+                       });
+    }
+
+    virtual void clear() noexcept
+    {
+      for (auto& slot : slots_)
+      {
+        if (slot.tracker != this)
+          slot.tracker->remove(slot.key, this);
+      }
+
+      slots_.clear();
+    }
+
+    virtual inline bool empty() noexcept
+    {
+      return slots_.empty();
+    }
+
+    virtual void copy(const slot_tracker& other) noexcept
+    {
+      for (const auto& tracked_slot : other.slots_)
+      {
+        // if this is a signal we keep the key of the slot to be called
+        // but if it's a tracked slot we need to adjust the key to point at us
+        cpp_signal_util::slot_key copied_key = tracked_slot.key;
+        if (!tracked_slot.call)
+        {
+          // the signature of the slot template is irrelevant here
+          copied_key = cpp_signal_util::slot<void()>::copy_key(tracked_slot.key, this);
+        }
+
+        // this is a non-tracked slot so just copy it and point the tracker to us
+        if (tracked_slot.tracker == &other)
+          add(copied_key, this, tracked_slot.call);
+        else
+        {
+          // keep track as well
+          add(copied_key, tracked_slot.tracker, tracked_slot.call);
+
+          // if this is a signal tell the tracker to track this signal
+          if (tracked_slot.call)
+            tracked_slot.tracker->add_to_track(copied_key, this);
+            // if this is a tracked slot tell the signal to call this slot
+          else
+            tracked_slot.tracker->add_to_call(copied_key, this);
+        }
+      }
+    }
+
+    slots slots_;
+  };
+};
+
+
+template<class TLockingPolicy = cpp_signal_no_locking>
+class cpp_signal
+{
+public:
+  using locking_policy = TLockingPolicy;
+
+  cpp_signal() = delete;
+
+  template<typename TReturn> class signal;
+
+  /********************* slot_tracker ********************/
+  class slot_tracker : public cpp_signal_base<locking_policy>::slot_tracker
+  {
+  private:
+    template<typename TReturn> friend class signal;
+
+    using slot_tracker_base = typename cpp_signal_base<locking_policy>::slot_tracker;
+    using slot_tracker_base::slots_;
+
+    using lock_guard = std::lock_guard<locking_policy>;
+
+  public:
+    slot_tracker() = default;
+
+    slot_tracker(const slot_tracker& other) noexcept
+      : slot_tracker_base(other)
+    { }
+
+    ~slot_tracker() noexcept = default;
 
     slot_tracker& operator=(const slot_tracker& other) noexcept
     {
@@ -325,83 +432,36 @@ public:
       }
     }
 
-    inline void add_to_call(const cpp_signal_util::slot_key& key, slot_tracker* tracker) noexcept
-    {
-      add(key, tracker, true);
-    }
-
-    inline void add_to_track(const cpp_signal_util::slot_key& key, slot_tracker* tracker) noexcept
-    {
-      add(key, tracker, false);
-    }
-
-    inline void add(const cpp_signal_util::slot_key& key, slot_tracker* tracker, bool call) noexcept
+    inline void add(const cpp_signal_util::slot_key& key, slot_tracker_base* tracker, bool call) noexcept override
     {
       lock_guard lock(*this);
-      slots_.emplace_front(tracked_slot{ key, tracker, call });
+      slot_tracker_base::add(key, tracker, call);
     }
 
-    inline void remove(const cpp_signal_util::slot_key& key, slot_tracker* tracker) noexcept
+    inline void remove(const cpp_signal_util::slot_key& key, slot_tracker_base* tracker) noexcept override
     {
       lock_guard lock(*this);
-      slots_.remove_if([&key, tracker](const tracked_slot& slot) -> bool
-      {
-        return slot.key == key && slot.tracker == tracker;
-      });
+      slot_tracker_base::remove(key, tracker);
     }
 
-    void clear() noexcept
+    void clear() noexcept override
     {
       lock_guard lock(*this);
-      for (auto& slot : slots_)
-      {
-        if (slot.tracker != this)
-          slot.tracker->remove(slot.key, this);
-      }
-
-      slots_.clear();
+      slot_tracker_base::clear();
     }
 
-    inline bool empty() noexcept
+    inline bool empty() noexcept override
     {
       lock_guard lock(*this);
-      return slots_.empty();
+      return slot_tracker_base::empty();
     }
 
   private:
-    void copy(const slot_tracker& other) noexcept
+    void copy(const slot_tracker_base& other) noexcept override
     {
       lock_guard lock(*this);
-      for (const auto& tracked_slot : other.slots_)
-      {
-        // if this is a signal we keep the key of the slot to be called
-        // but if it's a tracked slot we need to adjust the key to point at us
-        cpp_signal_util::slot_key copied_key = tracked_slot.key;
-        if (!tracked_slot.call)
-        {
-          // the signature of the slot template is irrelevant here
-          copied_key = cpp_signal_util::slot<void()>::copy_key(tracked_slot.key, this);
-        }
-
-        // this is a non-tracked slot so just copy it and point the tracker to us
-        if (tracked_slot.tracker == &other)
-          add(copied_key, this, tracked_slot.call);
-        else
-        {
-          // keep track as well
-          add(copied_key, tracked_slot.tracker, tracked_slot.call);
-
-          // if this is a signal tell the tracker to track this signal
-          if (tracked_slot.call)
-            tracked_slot.tracker->add_to_track(copied_key, this);
-          // if this is a tracked slot tell the signal to call this slot
-          else
-            tracked_slot.tracker->add_to_call(copied_key, this);
-        }
-      }
+      slot_tracker_base::copy(other);
     }
-
-    slots slots_;
   };
 
   /********************* signal ********************/

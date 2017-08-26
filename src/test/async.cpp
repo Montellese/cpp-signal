@@ -31,7 +31,7 @@ public:
     : m_void(void_value)
     , m_int(int_value)
   { }
-  ~tracked_async_test_class() = default;
+  ~tracked_async_test_class() noexcept override = default;
 
   unsigned int get_void() const { return m_void; }
   unsigned int get_int() const { return m_int; }
