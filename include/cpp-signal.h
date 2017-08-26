@@ -147,8 +147,8 @@ public:
     {
       return make_key(
         obj,
-        [](void* obj, TArgs... args)
-      { return static_cast<TObject*>(obj)->operator()(std::forward<TArgs>(args)...); }
+        [](void* ob, TArgs... args)
+      { return static_cast<TObject*>(ob)->operator()(std::forward<TArgs>(args)...); }
       );
     }
 
@@ -169,8 +169,8 @@ public:
     {
       return make_key(
         obj,
-        [](void* obj, TArgs... args)
-      { return (static_cast<TObject*>(obj)->*TFunction)(std::forward<TArgs>(args)...); }
+        [](void* ob, TArgs... args)
+      { return (static_cast<TObject*>(ob)->*TFunction)(std::forward<TArgs>(args)...); }
       );
     }
 
@@ -180,8 +180,8 @@ public:
     {
       return make_key(
         obj,
-        [](void* obj, TArgs... args)
-      { return (static_cast<TObject*>(obj)->*TFunction)(std::forward<TArgs>(args)...); }
+        [](void* ob, TArgs... args)
+      { return (static_cast<TObject*>(ob)->*TFunction)(std::forward<TArgs>(args)...); }
       );
     }
 
