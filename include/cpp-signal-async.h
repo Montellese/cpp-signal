@@ -406,28 +406,56 @@ public:
 
     // callable object
     template<typename TObject>
-    inline void connect(TObject& callable) noexcept
+    inline signal& connect(TObject& callable) noexcept
     {
-      connect<TObject>(std::addressof(callable));
+      return connect<TObject>(std::addressof(callable));
     }
 
     template<typename TObject>
-    inline void disconnect(TObject& callable) noexcept
+    inline signal& operator+=(TObject& callable) noexcept
     {
-      disconnect<TObject>(std::addressof(callable));
+      return connect<TObject>(callable);
+    }
+
+    template<typename TObject>
+    inline signal& disconnect(TObject& callable) noexcept
+    {
+      return disconnect<TObject>(std::addressof(callable));
+    }
+
+    template<typename TObject>
+    inline signal& operator-=(TObject& callable) noexcept
+    {
+      return disconnect<TObject>(callable);
     }
 
     // callable pointer to object
     template<typename TObject>
-    inline void connect(TObject* callable) noexcept
+    inline signal& connect(TObject* callable) noexcept
     {
       add<TObject>(connected_slot::template bind<TObject>(callable), callable);
+
+      return *this;
     }
 
     template<typename TObject>
-    inline void disconnect(TObject* callable) noexcept
+    inline signal& operator+=(TObject* callable) noexcept
+    {
+      return connect<TObject>(callable);
+    }
+
+    template<typename TObject>
+    inline signal& disconnect(TObject* callable) noexcept
     {
       remove<TObject>(connected_slot::template bind<TObject>(callable), callable);
+
+      return *this;
+    }
+
+    template<typename TObject>
+    inline signal& operator-=(TObject* callable) noexcept
+    {
+      return disconnect<TObject>(callable);
     }
 
     // static/global function

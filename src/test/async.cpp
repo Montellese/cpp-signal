@@ -80,7 +80,7 @@ SCENARIO("async signals can be emitted with a single parameter", "[async]")
     auto slot = [&slot_count](unsigned int count) { slot_count += count; };
     REQUIRE(slot_count == 0);
 
-    signal.connect(slot);
+    signal += slot;
 
     WHEN("the async signal is emitted with a single parameter")
     {
@@ -228,15 +228,19 @@ SCENARIO("slots can be disconnected from an asycn signal", "[async]")
 
     unsigned int slot_one_count = 0;
     unsigned int slot_two_count = 0;
+    unsigned int slot_three_count = 0;
 
     auto slot_one = [&slot_one_count]() { ++slot_one_count; };
     auto slot_two = [&slot_two_count]() { ++slot_two_count; };
+    auto slot_three = [&slot_three_count]() { ++slot_three_count; };
 
     REQUIRE(slot_one_count == 0);
     REQUIRE(slot_two_count == 0);
+    REQUIRE(slot_three_count == 0);
 
     signal.connect(slot_one);
-    signal.connect(slot_two);
+    signal += slot_two;
+    signal.connect(slot_three);
 
     WHEN("the async signal is emitted")
     {
@@ -248,11 +252,13 @@ SCENARIO("slots can be disconnected from an asycn signal", "[async]")
 
         REQUIRE(slot_one_count == 1);
         REQUIRE(slot_two_count == 1);
+        REQUIRE(slot_three_count == 1);
       }
 
-      AND_WHEN("one of the slots is disconnected")
+      AND_WHEN("some of the slots are disconnected")
       {
         signal.disconnect(slot_one);
+        signal -= slot_three;
 
         AND_WHEN("the async signal is emitted")
         {
@@ -264,6 +270,7 @@ SCENARIO("slots can be disconnected from an asycn signal", "[async]")
 
             REQUIRE(slot_one_count == 1);
             REQUIRE(slot_two_count == 2);
+            REQUIRE(slot_three_count == 1);
           }
         }
       }
