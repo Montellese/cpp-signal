@@ -212,6 +212,8 @@ public:
   private:
     template<typename TReturn> friend class signal;
 
+    using lock_guard = std::lock_guard<locking_policy>;
+
     struct tracked_slot
     {
       const cpp_signal_util::slot_key key;
@@ -244,7 +246,7 @@ public:
     template<class TSlot, typename... TCallArgs>
     void call(TCallArgs&&... args)
     {
-      std::lock_guard<locking_policy> lock(*this);
+      lock_guard lock(*this);
       for (const auto& slot : slots_)
       {
         if (!slot.call)
@@ -259,7 +261,7 @@ public:
     {
       static_assert(std::is_same<typename TSlot::result_type, void>::value == false, "Cannot accumulate slot return values of type 'void'");
 
-      std::lock_guard<locking_policy> lock(*this);
+      lock_guard lock(*this);
       for (const auto& slot : slots_)
       {
         if (!slot.call)
@@ -276,7 +278,7 @@ public:
     {
       static_assert(std::is_same<typename TSlot::result_type, void>::value == false, "Cannot accumulate slot return values of type 'void'");
 
-      std::lock_guard<locking_policy> lock(*this);
+      lock_guard lock(*this);
       for (const auto& slot : slots_)
       {
         if (!slot.call)
@@ -296,7 +298,7 @@ public:
       TContainer container;
       auto iterator = std::inserter(container, container.end());
 
-      std::lock_guard<locking_policy> lock(*this);
+      lock_guard lock(*this);
       for (const auto& slot : slots_)
       {
         if (!slot.call)
@@ -313,7 +315,7 @@ public:
     {
       static_assert(std::is_same<typename TSlot::result_type, void>::value == false, "Cannot collect slot return values of type 'void'");
 
-      std::lock_guard<locking_policy> lock(*this);
+      lock_guard lock(*this);
       for (const auto& slot : slots_)
       {
         if (!slot.call)
@@ -335,13 +337,13 @@ public:
 
     inline void add(const cpp_signal_util::slot_key& key, slot_tracker* tracker, bool call) noexcept
     {
-      std::lock_guard<locking_policy> lock(*this);
+      lock_guard lock(*this);
       slots_.emplace_front(tracked_slot{ key, tracker, call });
     }
 
     inline void remove(const cpp_signal_util::slot_key& key, slot_tracker* tracker) noexcept
     {
-      std::lock_guard<locking_policy> lock(*this);
+      lock_guard lock(*this);
       slots_.remove_if([&key, tracker](const tracked_slot& slot) -> bool
       {
         return slot.key == key && slot.tracker == tracker;
@@ -350,7 +352,7 @@ public:
 
     void clear() noexcept
     {
-      std::lock_guard<locking_policy> lock(*this);
+      lock_guard lock(*this);
       for (auto& slot : slots_)
       {
         if (slot.tracker != this)
@@ -362,14 +364,14 @@ public:
 
     inline bool empty() noexcept
     {
-      std::lock_guard<locking_policy> lock(*this);
+      lock_guard lock(*this);
       return slots_.empty();
     }
 
   private:
     void copy(const slot_tracker& other) noexcept
     {
-      std::lock_guard<locking_policy> lock(*this);
+      lock_guard lock(*this);
       for (const auto& tracked_slot : other.slots_)
       {
         // if this is a signal we keep the key of the slot to be called
