@@ -112,7 +112,7 @@ public:
       obj_ = nullptr;
       fun_ = nullptr;
     }
-    
+
     static slot_key copy_key(const slot_key& key, object copied_obj) noexcept
     {
       object obj = reinterpret_cast<object>(key.first);
@@ -204,9 +204,14 @@ public:
 
   cpp_signal_base() = delete;
 
+  template<typename TSlotTracker, typename TReturn> class signal;
+
   /********************* slot_tracker ********************/
   class slot_tracker : protected locking_policy
   {
+  private:
+    template<typename TSlotTracker, typename TReturn> friend class signal;
+
   protected:
     struct tracked_slot
     {
@@ -309,8 +314,178 @@ public:
 
     slots slots_;
   };
-};
 
+  /********************* signal ********************/
+  template<typename TSlotTracker, typename TReturn, typename... TArgs>
+  class signal<TSlotTracker, TReturn(TArgs...)> : public TSlotTracker
+  {
+    static_assert(std::is_base_of<slot_tracker, TSlotTracker>::value, "TSlotTracker must be derived from cpp_signal_base<>::slot_tracker");
+
+  private:
+    using connected_slot = cpp_signal_util::slot<TReturn(TArgs...)>;
+
+  public:
+    using result_type = TReturn;
+
+    signal() = default;
+
+    signal(const signal& other) noexcept
+      : TSlotTracker(other)
+    { }
+
+    ~signal() noexcept override = default;
+
+    // callable object
+    template<typename TObject>
+    inline signal& connect(TObject& callable) noexcept
+    {
+      return connect<TObject>(std::addressof(callable));
+    }
+
+    template<typename TObject>
+    inline signal& operator+=(TObject& callable) noexcept
+    {
+      return connect<TObject>(callable);
+    }
+
+    template<typename TObject>
+    inline signal& disconnect(TObject& callable) noexcept
+    {
+      return disconnect<TObject>(std::addressof(callable));
+    }
+
+    template<typename TObject>
+    inline signal& operator-=(TObject& callable) noexcept
+    {
+      return disconnect<TObject>(callable);
+    }
+
+    // callable pointer to object
+    template<typename TObject>
+    inline signal& connect(TObject* callable) noexcept
+    {
+      add<TObject>(connected_slot::template bind<TObject>(callable), callable);
+
+      return *this;
+    }
+
+    template<typename TObject>
+    inline signal& operator+=(TObject* callable) noexcept
+    {
+      return connect<TObject>(callable);
+    }
+
+    template<typename TObject>
+    inline signal& disconnect(TObject* callable) noexcept
+    {
+      remove<TObject>(connected_slot::template bind<TObject>(callable), callable);
+
+      return *this;
+    }
+
+    template<typename TObject>
+    inline signal& operator-=(TObject* callable) noexcept
+    {
+      return disconnect<TObject>(callable);
+    }
+
+    // static/global function
+    template<TReturn(*TFunction)(TArgs...)>
+    inline void connect() noexcept
+    {
+      TSlotTracker::add_to_call(connected_slot::template bind<TFunction>(), this);
+    }
+
+    template<TReturn(*TFunction)(TArgs...)>
+    inline void disconnect() noexcept
+    {
+      TSlotTracker::remove(connected_slot::template bind<TFunction>(), this);
+    }
+
+    // member function from object
+    template<typename TObject, TReturn(TObject::*TFunction)(TArgs...)>
+    inline void connect(TObject& obj) noexcept
+    {
+      connect<TObject, TFunction>(std::addressof(obj));
+    }
+
+    template<typename TObject, TReturn(TObject::*TFunction)(TArgs...)>
+    inline void disconnect(TObject& obj) noexcept
+    {
+      disconnect<TObject, TFunction>(std::addressof(obj));
+    }
+
+    // member function from pointer to object
+    template<typename TObject, TReturn(TObject::*TFunction)(TArgs...)>
+    inline void connect(TObject* obj) noexcept
+    {
+      add<TObject>(connected_slot::template bind<TObject, TFunction>(obj), obj);
+    }
+
+    template<typename TObject, TReturn(TObject::*TFunction)(TArgs...)>
+    inline void disconnect(TObject* obj) noexcept
+    {
+      remove<TObject>(connected_slot::template bind<TObject, TFunction>(obj), obj);
+    }
+
+    // const member function from object
+    template<typename TObject, TReturn(TObject::*TFunction)(TArgs...) const>
+    inline void connect(TObject& obj) noexcept
+    {
+      connect<TObject, TFunction>(std::addressof(obj));
+    }
+
+    template<typename TObject, TReturn(TObject::*TFunction)(TArgs...) const>
+    inline void disconnect(TObject& obj) noexcept
+    {
+      disconnect<TObject, TFunction>(std::addressof(obj));
+    }
+
+    // const member function from pointer to object
+    template<typename TObject, TReturn(TObject::*TFunction)(TArgs...) const>
+    inline void connect(TObject* obj) noexcept
+    {
+      add<TObject>(connected_slot::template bind<TObject, TFunction>(obj), obj);
+    }
+
+    template<typename TObject, TReturn(TObject::*TFunction)(TArgs...) const>
+    inline void disconnect(TObject* obj) noexcept
+    {
+      remove<TObject>(connected_slot::template bind<TObject, TFunction>(obj), obj);
+    }
+
+  protected:
+    // connect tracked slot (relying on SFINAE)
+    template <typename TObject>
+    inline void add(const cpp_signal_util::slot_key& key, slot_tracker* tracker) noexcept
+    {
+      TSlotTracker::add_to_call(key, tracker);
+      tracker->add_to_track(key, this);
+    }
+
+    // connect untracked slot (relying on SFINAE)
+    template <typename TObject>
+    inline void add(const cpp_signal_util::slot_key& key, ...) noexcept
+    {
+      TSlotTracker::add_to_call(key, this);
+    }
+
+    // disconnect tracked slot (relying on SFINAE)
+    template <typename TObject>
+    inline void remove(const cpp_signal_util::slot_key& key, slot_tracker* tracker) noexcept
+    {
+      TSlotTracker::remove(key, tracker);
+      tracker->remove(key, this);
+    }
+
+    // disconnect untracked slot (relying on SFINAE)
+    template <typename TObject>
+    inline void remove(const cpp_signal_util::slot_key& key, ...) noexcept
+    {
+      TSlotTracker::remove(key, this);
+    }
+  };
+};
 
 template<class TLockingPolicy = cpp_signal_no_locking>
 class cpp_signal
@@ -340,7 +515,7 @@ public:
       : slot_tracker_base(other)
     { }
 
-    ~slot_tracker() noexcept = default;
+    ~slot_tracker() noexcept override = default;
 
     slot_tracker& operator=(const slot_tracker& other) noexcept
     {
@@ -466,9 +641,10 @@ public:
 
   /********************* signal ********************/
   template<typename TReturn, typename... TArgs>
-  class signal<TReturn(TArgs...)> : public slot_tracker
+  class signal<TReturn(TArgs...)> : public cpp_signal_base<locking_policy>::template signal<slot_tracker, TReturn(TArgs...)>
   {
   private:
+    using signal_base = typename cpp_signal_base<locking_policy>::template signal<slot_tracker, TReturn(TArgs...)>;
     using connected_slot = cpp_signal_util::slot<TReturn(TArgs...)>;
 
   public:
@@ -477,10 +653,10 @@ public:
     signal() = default;
 
     signal(const signal& other) noexcept
-      : slot_tracker(other)
+      : signal_base(other)
     { }
 
-    ~signal() = default;
+    ~signal() noexcept override = default;
 
     template<typename... TEmitArgs>
     inline void operator()(TEmitArgs&&... args)
@@ -516,156 +692,6 @@ public:
     inline void collect(TCollector&& collector, TEmitArgs&&... args)
     {
       slot_tracker::template collect<TCollector, connected_slot>(std::forward<TCollector>(collector), std::forward<TEmitArgs>(args)...);
-    }
-
-    // callable object
-    template<typename TObject>
-    inline signal& connect(TObject& callable) noexcept
-    {
-      return connect<TObject>(std::addressof(callable));
-    }
-
-    template<typename TObject>
-    inline signal& operator+=(TObject& callable) noexcept
-    {
-      return connect<TObject>(callable);
-    }
-
-    template<typename TObject>
-    inline signal& disconnect(TObject& callable) noexcept
-    {
-      return disconnect<TObject>(std::addressof(callable));
-    }
-
-    template<typename TObject>
-    inline signal& operator-=(TObject& callable) noexcept
-    {
-      return disconnect<TObject>(callable);
-    }
-
-    // callable pointer to object
-    template<typename TObject>
-    inline signal& connect(TObject* callable) noexcept
-    {
-      add<TObject>(connected_slot::template bind<TObject>(callable), callable);
-
-      return *this;
-    }
-
-    template<typename TObject>
-    inline signal& operator+=(TObject* callable) noexcept
-    {
-      return connect<TObject>(callable);
-    }
-
-    template<typename TObject>
-    inline signal& disconnect(TObject* callable) noexcept
-    {
-      remove<TObject>(connected_slot::template bind<TObject>(callable), callable);
-
-      return *this;
-    }
-
-    template<typename TObject>
-    inline signal& operator-=(TObject* callable) noexcept
-    {
-      return disconnect<TObject>(callable);
-    }
-
-    // static/global function
-    template<TReturn(*TFunction)(TArgs...)>
-    inline void connect() noexcept
-    {
-      slot_tracker::add_to_call(connected_slot::template bind<TFunction>(), this);
-    }
-
-    template<TReturn(*TFunction)(TArgs...)>
-    inline void disconnect() noexcept
-    {
-      slot_tracker::remove(connected_slot::template bind<TFunction>(), this);
-    }
-
-    // member function from object
-    template<typename TObject, TReturn(TObject::*TFunction)(TArgs...)>
-    inline void connect(TObject& obj) noexcept
-    {
-      connect<TObject, TFunction>(std::addressof(obj));
-    }
-
-    template<typename TObject, TReturn(TObject::*TFunction)(TArgs...)>
-    inline void disconnect(TObject& obj) noexcept
-    {
-      disconnect<TObject, TFunction>(std::addressof(obj));
-    }
-
-    // member function from pointer to object
-    template<typename TObject, TReturn(TObject::*TFunction)(TArgs...)>
-    inline void connect(TObject* obj) noexcept
-    {
-      add<TObject>(connected_slot::template bind<TObject, TFunction>(obj), obj);
-    }
-
-    template<typename TObject, TReturn(TObject::*TFunction)(TArgs...)>
-    inline void disconnect(TObject* obj) noexcept
-    {
-      remove<TObject>(connected_slot::template bind<TObject, TFunction>(obj), obj);
-    }
-
-    // const member function from object
-    template<typename TObject, TReturn(TObject::*TFunction)(TArgs...) const>
-    inline void connect(TObject& obj) noexcept
-    {
-      connect<TObject, TFunction>(std::addressof(obj));
-    }
-
-    template<typename TObject, TReturn(TObject::*TFunction)(TArgs...) const>
-    inline void disconnect(TObject& obj) noexcept
-    {
-      disconnect<TObject, TFunction>(std::addressof(obj));
-    }
-
-    // const member function from pointer to object
-    template<typename TObject, TReturn(TObject::*TFunction)(TArgs...) const>
-    inline void connect(TObject* obj) noexcept
-    {
-      add<TObject>(connected_slot::template bind<TObject, TFunction>(obj), obj);
-    }
-
-    template<typename TObject, TReturn(TObject::*TFunction)(TArgs...) const>
-    inline void disconnect(TObject* obj) noexcept
-    {
-      remove<TObject>(connected_slot::template bind<TObject, TFunction>(obj), obj);
-    }
-
-  private:
-    // connect tracked slot (relying on SFINAE)
-    template <typename TObject>
-    inline void add(const cpp_signal_util::slot_key& key, typename TObject::slot_tracker* tracker) noexcept
-    {
-      slot_tracker::add_to_call(key, tracker);
-      tracker->add_to_track(key, this);
-    }
-
-    // connect untracked slot (relying on SFINAE)
-    template <typename TObject>
-    inline void add(const cpp_signal_util::slot_key& key, ...) noexcept
-    {
-      slot_tracker::add_to_call(key, this);
-    }
-
-    // disconnect tracked slot (relying on SFINAE)
-    template <typename TObject>
-    inline void remove(const cpp_signal_util::slot_key& key, typename TObject::slot_tracker* tracker) noexcept
-    {
-      slot_tracker::remove(key, tracker);
-      tracker->remove(key, this);
-    }
-
-    // disconnect untracked slot (relying on SFINAE)
-    template <typename TObject>
-    inline void remove(const cpp_signal_util::slot_key& key, ...) noexcept
-    {
-      slot_tracker::remove(key, this);
     }
   };
 };
