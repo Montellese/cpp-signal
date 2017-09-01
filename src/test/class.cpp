@@ -109,7 +109,7 @@ SCENARIO("callable classes can be used as slots", "[class]")
 
     WHEN("the signal is emitted")
     {
-      int count = 5;
+      unsigned int count = 5;
 
       signal.emit(count);
 
@@ -178,7 +178,7 @@ SCENARIO("class methods can be used as slots", "[class]")
 
     WHEN("the signal is emitted")
     {
-      int count = 5;
+      unsigned int count = 5;
 
       signal.emit(count);
 
@@ -249,7 +249,7 @@ SCENARIO("static class methods can be used as slots", "[class]")
 
     WHEN("the signal is emitted")
     {
-      int count = 5;
+      unsigned int count = 5;
 
       signal.emit(count);
 

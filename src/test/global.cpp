@@ -76,7 +76,7 @@ SCENARIO("global methods can be used as slots", "[global]")
 
     WHEN("the signal is emitted")
     {
-      int count = 5;
+      unsigned int count = 5;
 
       signal.emit(count);
 
