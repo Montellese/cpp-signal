@@ -30,6 +30,7 @@
 
 #include <cpp-signal.h>
 #include <cpp-signal-locking.h>
+#include <cpp-signal-util.h>
 
 template<class TLockingPolicy = std::mutex>
 class cpp_signal_async
