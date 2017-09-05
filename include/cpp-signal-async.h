@@ -21,14 +21,13 @@
 #define CPP_SIGNAL_ASYNC_H_
 
 #include <condition_variable>
-#include <forward_list>
 #include <future>
-#include <memory>
 #include <mutex>
 #include <thread>
 #include <type_traits>
+#include <utility>
 
-#include <cpp-signal.h>
+#include <cpp-signal-base.h>
 #include <cpp-signal-locking.h>
 #include <cpp-signal-util.h>
 
