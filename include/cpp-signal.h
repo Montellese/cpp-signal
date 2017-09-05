@@ -23,45 +23,9 @@
 #include <cstdint>
 #include <forward_list>
 #include <memory>
-#include <mutex>
 #include <type_traits>
 
-class cpp_signal_no_locking
-{
-public:
-  cpp_signal_no_locking() = default;
-  ~cpp_signal_no_locking() = default;
-
-  inline void lock() { }
-  inline void unlock() { }
-};
-
-class cpp_signal_global_locking
-{
-public:
-  cpp_signal_global_locking() = default;
-  ~cpp_signal_global_locking() = default;
-
-  inline void lock()
-  {
-    mutex().lock();
-  }
-
-  inline void unlock()
-  {
-    mutex().unlock();
-  }
-
-private:
-  static std::mutex& mutex()
-  {
-    static std::mutex mutex;
-    return mutex;
-  }
-};
-
-using cpp_signal_local_locking = std::mutex;
-using cpp_signal_recursive_local_locking = std::recursive_mutex;
+#include <cpp-signal-locking.h>
 
 class cpp_signal_util
 {

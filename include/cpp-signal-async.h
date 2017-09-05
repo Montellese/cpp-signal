@@ -29,6 +29,7 @@
 #include <type_traits>
 
 #include <cpp-signal.h>
+#include <cpp-signal-locking.h>
 
 template<class TLockingPolicy = std::mutex>
 class cpp_signal_async

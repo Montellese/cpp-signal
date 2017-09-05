@@ -29,7 +29,8 @@ endif()
 set(INCLUDE_DIR "include")
 
 set(HEADERS ${PROJECT_SOURCE_DIR}/${INCLUDE_DIR}/${PROJECT_NAME}.h
-            ${PROJECT_SOURCE_DIR}/${INCLUDE_DIR}/${PROJECT_NAME}-async.h)
+            ${PROJECT_SOURCE_DIR}/${INCLUDE_DIR}/${PROJECT_NAME}-async.h
+            ${PROJECT_SOURCE_DIR}/${INCLUDE_DIR}/${PROJECT_NAME}-locking.h)
 
 # header-only library
 add_library(${PROJECT_NAME} INTERFACE)
