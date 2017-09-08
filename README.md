@@ -1,5 +1,5 @@
 # cpp-signal #
-cpp-signal is a (single*) header-only pure C++11 library providing signal and slot functionality. Using it is as easy as
+cpp-signal is a header-only pure C++11 library providing signal and slot functionality. Using it is as easy as
 ```cpp
 #include <cpp-signal.h>
 ...
@@ -25,7 +25,6 @@ which will result in the following output on standard out:
 slot(1)
 slot(2)
 ```
-###### ** The synchronous cpp-signal implementation is available in a single header. The asynchronous implementation is available in a separate header file.* ######
 
 ----------
 ### Requirements ###
