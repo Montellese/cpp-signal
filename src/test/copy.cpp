@@ -27,7 +27,7 @@ public:
   copy_test_class()
     : m_int(0)
   { }
-  ~copy_test_class() = default;
+  ~copy_test_class() noexcept override = default;
 
   unsigned int get_int() const { return m_int; }
   inline void slot_int(int count) { m_int += count; }
