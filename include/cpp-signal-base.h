@@ -288,7 +288,7 @@ public:
   protected:
     // connect tracked slot (relying on SFINAE)
     template <typename TObject>
-    inline void add(const cpp_signal_util::slot_key& key, slot_tracker* tracker) noexcept
+    inline void add(const cpp_signal_util::slot_key& key, TSlotTracker* tracker) noexcept
     {
       TSlotTracker::add_to_call(key, tracker);
       tracker->add_to_track(key, this);
@@ -303,7 +303,7 @@ public:
 
     // disconnect tracked slot (relying on SFINAE)
     template <typename TObject>
-    inline void remove(const cpp_signal_util::slot_key& key, slot_tracker* tracker) noexcept
+    inline void remove(const cpp_signal_util::slot_key& key, TSlotTracker* tracker) noexcept
     {
       TSlotTracker::remove(key, tracker);
       tracker->remove(key, this);

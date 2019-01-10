@@ -45,6 +45,7 @@ public:
   class slot_tracker : public cpp_signal_base<locking_policy>::slot_tracker
   {
   private:
+    template<typename TSlotTracker, typename TReturn> friend class cpp_signal_base<locking_policy>::signal;
     template<typename TReturn> friend class signal;
 
     using slot_tracker_base = typename cpp_signal_base<locking_policy>::slot_tracker;
