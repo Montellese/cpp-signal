@@ -1,0 +1,18 @@
+# Travis CI integration
+
+language: cpp
+
+os: linux
+dist: xenial
+
+compiler:
+  - gcc
+  - clang
+
+before_script:
+  - mkdir build
+  - cd build
+  - cmake ..
+
+script:
+  - make -j4 && make test
