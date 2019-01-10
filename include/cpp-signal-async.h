@@ -83,6 +83,8 @@ public:
       int count_;
     };
 
+    friend class semaphore;
+
     class scoped_semaphore
     {
     public:
