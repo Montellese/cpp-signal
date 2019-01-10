@@ -31,7 +31,7 @@ slot(2)
 The only thing required to use cpp-signal is a C++11 compliant compiler.
 
 #### Buildsystem ####
-To be able to run the tests provided with cpp-signal [CMake](https://cmake.org/) 3.0 or newer is required. Run the following commands to build the tests and execute them:
+To be able to run the tests provided with cpp-signal [CMake](https://cmake.org/) 3.1 or newer is required. Run the following commands to build the tests and execute them:
 ```bash
 # mkdir build
 # cd build
