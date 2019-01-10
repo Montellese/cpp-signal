@@ -164,7 +164,7 @@ public:
       : TSlotTracker(other)
     { }
 
-    ~signal() noexcept override = default;
+    virtual ~signal() noexcept override = default;
 
     // callable object
     template<typename TObject>
