@@ -20,6 +20,10 @@
 #ifndef CPP_SIGNAL_ASYNC_H_
 #define CPP_SIGNAL_ASYNC_H_
 
+#if defined(_MSC_VER) && _MSC_VER < 1910
+#define MSVC_LEGACY
+#endif
+
 #include <condition_variable>
 #include <future>
 #include <mutex>
@@ -229,7 +233,11 @@ public:
 
       sem_.wait();
       return async(
+#ifdef MSVC_LEGACY
+        [this](TCollector&& collector, TCallArgs&&... args) -> void
+#else
         [this](cpp_signal_util::decay_t<TCollector>&& collector, TCallArgs&&... args) -> void
+#endif
         {
           for (const auto& slot : slots_)
           {
@@ -277,12 +285,24 @@ public:
     // this is an alternative to std::async which allows the caller to discard the returned
     // std::future
     template<class TFunction, typename... TArgs>
+#ifdef MSVC_LEGACY
+    std::future<cpp_signal_util::decay_t<cpp_signal_util::result_of_t<TFunction(TArgs...)>>> async(TFunction&& fun, TArgs&&... args)
+#else
     std::future<cpp_signal_util::result_of_t<cpp_signal_util::decay_t<TFunction>(cpp_signal_util::decay_t<TArgs>...)>> async(TFunction&& fun, TArgs&&... args)
+#endif
     {
+#ifdef MSVC_LEGACY
+      using result_t = cpp_signal_util::decay_t<cpp_signal_util::result_of_t<TFunction(TArgs...)>>;
+#else
       using result_t = cpp_signal_util::result_of_t<cpp_signal_util::decay_t<TFunction>(cpp_signal_util::decay_t<TArgs>...)>;
+#endif
 
       // create a task for the given function
+#ifdef MSVC_LEGACY
+      std::packaged_task<result_t(TArgs...)> task(std::forward<TFunction>(fun));
+#else
       std::packaged_task<result_t(cpp_signal_util::decay_t<TArgs>...)> task(std::forward<TFunction>(fun));
+#endif
       // get the future of the task
       auto result = task.get_future();
 
