@@ -1,0 +1,59 @@
+# AppVeyor Integration
+
+image:
+  - Visual Studio 2015
+  - Visual Studio 2017
+  - Ubuntu
+
+configuration:
+  - Release
+
+build_script:
+  - ps: |
+      cd $env:APPVEYOR_BUILD_FOLDER/cpp-signal-build
+      cmake --build . --config Release 2>&1
+
+test_script:
+  - ps: |
+      cd $env:APPVEYOR_BUILD_FOLDER/cpp-signal-build
+      ctest -C Release 2>&1
+
+for:
+  -
+    matrix:
+      only:
+        - image: Visual Studio 2015
+    before_build:
+      - ps: |
+          mkdir $env:APPVEYOR_BUILD_FOLDER/cpp-signal-build
+          cd $env:APPVEYOR_BUILD_FOLDER/cpp-signal-build
+          cmake -G "Visual Studio 14" .. 2>&1
+      - call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /x64
+      - call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86_amd64
+  -
+    matrix:
+      only:
+        - image: Visual Studio 2017
+    before_build:
+      - ps: |
+          mkdir $env:APPVEYOR_BUILD_FOLDER/cpp-signal-build
+          cd $env:APPVEYOR_BUILD_FOLDER/cpp-signal-build
+          cmake -G "Visual Studio 15 2017 Win64" .. 2>&1
+      - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
+  -
+    matrix:
+      only:
+        - image: Ubuntu
+    before_build:
+      - sh: |
+          mkdir $APPVEYOR_BUILD_FOLDER/cpp-signal-build
+          cd $APPVEYOR_BUILD_FOLDER/cpp-signal-build
+          cmake .. 2>&1
+    build_script:
+      - sh: |
+          cd $APPVEYOR_BUILD_FOLDER/cpp-signal-build
+          cmake --build . --config Release 2>&1
+    test_script:
+      - sh: |
+          cd $APPVEYOR_BUILD_FOLDER/cpp-signal-build
+          ctest -C Release 2>&1
