@@ -67,6 +67,8 @@ cpp-signal has been explictely tested with the following compilers:
     *   5.5.0
 *   clang
     *   7.0.0
+*   Apple LLVM
+    *   9.1.0
 *   MSVC
     *   Visual Studio 2015 (v140 / 1900) requires some legacy code (see ```MSVC_LEGACY``` in ```cpp-signal-async.h```)
     *   Visual Studio 2017 (v141 / 1916)
