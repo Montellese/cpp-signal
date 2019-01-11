@@ -2,8 +2,11 @@
 
 language: cpp
 
-os: linux
-dist: xenial
+matrix:
+  include:
+    - os: linux
+      dist: xenial
+    - os: osx
 
 compiler:
   - gcc
