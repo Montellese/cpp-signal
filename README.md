@@ -29,6 +29,24 @@ slot(2)
 ```
 
 ----------
+### Table of Contents ###
+*   [Requirements](#requirements)
+    *   [Buildsystem](#buildsystem)
+    *   [Compilers](#compilers)
+*   [Features](#features)
+    *   [Type-safety](#type-safety)
+    *   [Managed connections](#managed-connections)
+    *   [Flexible slots](#flexible-slots)
+    *   [Signal chaining](#signal-chaining)
+    *   [Copying](#copying)
+    *   [Slot result collection](#slot-result-collection)
+    *   [Threading policy](#threading-policy)
+    *   [Asynchronous signal emission](#asynchronous-signal-emission)
+*   [Known Issues](#known-issues)
+    *   [Deadlocks](#deadlocks)
+*   [Performance](#performance)
+*   [The Future](#the-future)
+
 ### Requirements ###
 The only thing required to use cpp-signal is a C++11 compliant compiler.
 
@@ -54,19 +72,6 @@ cpp-signal has been explictely tested with the following compilers:
     *   Visual Studio 2017 (v141 / 1916)
 
 ### Features ###
-*   [Type-safety](#type-safety)
-*   [Managed connections](#managed-connections)
-*   [Flexible slots](#flexible-slots)
-    *   Static (global) methods
-    *   Static class methods
-    *   Non-static class methods
-    *   Callables (including lambda expressions)
-*   [Signal chaining](#signal-chaining)
-*   [Copying](#copying)
-*   [Slot result collection](#slot-result-collectCion)
-*   [Threading policy](#threading-policy)
-*   [Asynchronous signal emission](#asynchronous-signal-emission)
-
 #### Type-safety ####
 Thanks to C++11's variadic templates cpp-signal calls are completely type-safe. It is not possible to connect a slot with mismatching return type and or parameter list to a signal. Furthermore it is not possible to emit a signal with mismatching parameters.
 
