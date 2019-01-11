@@ -1,4 +1,6 @@
 # cpp-signal #
+[![Travis CI Build Status](https://travis-ci.org/Montellese/cpp-signal.svg?branch=master)](https://travis-ci.org/Montellese/cpp-signal) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/Montellese/cpp-signal?svg=true)](https://ci.appveyor.com/project/Montellese/cpp-signal)
+
 cpp-signal is a header-only pure C++11 library providing signal and slot functionality. Using it is as easy as
 ```cpp
 #include <cpp-signal.h>
