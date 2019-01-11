@@ -232,6 +232,10 @@ Due to the asynchronous emission of signals there are a few things that need to 
 *   `cpp_signal_async<>` also supports specifying the locking policy. While for `cpp_signal<>` the default locking policy is no locking at all for `cpp_signal_async<>` the default locking policy is `std::mutex` because it needs to be thread-safe. When choosing a different locking policy it is the users responsibility to provide a thread-safe locking policy.
 *   All emission methods (`emit()`, `accumulate()`, `accumulate_op()`, `aggregate()` and `collect()`) return an `std::future<>` to be able to wait for emission to finish and to be able to access any results. As opposed to when using `std::future<>` returned from `std::async()` the returned `std::future<>` does not have to be stored and used but can be ignored. Either way the emission will be executed asynchronously (which is not the case with `std::async()`).
 
+### Known Issues ###
+#### Deadlocks ####
+Right now cpp-signal is not fully thread safe / reentrant and *does not* support recursive signal emissions within slots. Doing so may cause a deadlock if the emissions affect multiple threads. The reported [issue](https://github.com/Montellese/cpp-signal/issues/2) will stay open until this has been resolved.
+
 ### Performance ###
 Based on the benchmarks used by [nano-signal-slot](https://github.com/NoAvailableAlias/signal-slot-benchmarks) cpp-signal ranks fourth right on [nano-signal-slot](https://github.com/NoAvailableAlias/nano-signal-slot)'s and Wink-Signals tails:
 
