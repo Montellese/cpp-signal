@@ -9,16 +9,29 @@ matrix:
   include:
     - os: linux
       dist: xenial
+      env: CONFIG=Debug
+      compiler: gcc
+    - os: linux
+      dist: xenial
+      env: CONFIG=Release
+      compiler: gcc
+    - os: linux
+      dist: xenial
+      env: CONFIG=Debug
+      compiler: clang
+    - os: linux
+      dist: xenial
+      env: CONFIG=Release
+      compiler: clang
     - os: osx
-
-compiler:
-  - gcc
-  - clang
+      env: CONFIG=Debug
+    - os: osx
+      env: CONFIG=Release
 
 before_script:
   - mkdir build
   - cd build
-  - cmake ..
+  - cmake -DCMAKE_BUILD_TYPE=${CONFIG} ..
 
 script:
   - make -j4 && make test
