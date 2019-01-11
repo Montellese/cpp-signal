@@ -42,6 +42,17 @@ To be able to run the tests provided with cpp-signal [CMake](https://cmake.org/)
 # ctest -C Debug
 ```
 
+#### Compilers ####
+cpp-signal has been explictely tested with the following compilers:
+*   gcc
+    *   5.4.0
+    *   5.5.0
+*   clang
+    *   7.0.0
+*   MSVC
+    *   Visual Studio 2015 (v140 / 1900) requires some legacy code (see ```MSVC_LEGACY``` in ```cpp-signal-async.h```)
+    *   Visual Studio 2017 (v141 / 1916)
+
 ### Features ###
 *   [Type-safety](#type-safety)
 *   [Managed connections](#managed-connections)
